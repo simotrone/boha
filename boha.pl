@@ -40,7 +40,7 @@ $boha->{quit} = 'Dave... ho paura';
 $boha->{chan} = [ '#perl.it', '#perl-it' ]; # [ '#nordest.pm' ];
 
 #### creiamo gli oggetti POE che ci servono
-POE::Component::IRC->new( 'boha' )
+POE::Component::IRC->spawn(alias => 'boha')
     or die "Can't instantiate new IRC component!\n";
 
 # POE::Component::Server::SOAP->new(
