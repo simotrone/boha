@@ -12,8 +12,6 @@
 #sub POE::Kernel::TRACE_EVENTS () { 1 };
 #sub POE::Kernel::TRACE_SESSIONS () { 1 };
 #}
-use strict;
-use warnings;
 use Boha;
 use Encode;
 use POE;
@@ -260,14 +258,9 @@ sub irc_msg {
         $boha->say($who, "sintassi: help <botlet> [<topic>]");
         $boha->say($who, "botlet attivi:");
         foreach my $botlet (@Boha::botlet) {
-            my $ver = eval "\$${botlet}::VERSION";
-            if (my $e = $@) {
-                warn "cannot eval the $botlet version\n";
-                $ver = 'N/A';
-            }
             my $botletname = $botlet;
             $botletname =~ s/^Boha::Botlet:://;
-            $boha->say($who, ".    $botletname  $ver");
+            $boha->say($who, ".    $botletname  ${$botlet.'::VERSION'}");
         }
         return;
     }
@@ -286,17 +279,16 @@ sub irc_msg {
         {
             next unless ($botlet =~ /$botletname$/i);
 
-            # FIXME (sub ref)
-            my $event = $botlet."::help";
+            $event = $botlet."::help";
             print STDERR "DBG irc_msg | trying calling $event ()\n";
-            if ($botlet->can('help')) {
-                my $sub = \&{$event};
-                $sub->($boha, $who, @param);
-            }
-            else {
+            if( defined &{$event} )
+            {
+                &{$event}($boha, $who, @param);
+                return;
+            } else {
                 $boha->say($who, "sorry, '$botletname' non ha nessun help");
+                return;
             }
-            return;
         }
         $boha->say($who, "botlet sconosciuto: '$botletname'");
         $boha->say($who, "digita soltanto 'help' per un elenco dei botlet attivi");
@@ -342,6 +334,8 @@ sub irc_notice {
 }
 
 sub irc_kick {
+    my($kernel, $kicker, $chan, $who, $msg) = @_[KERNEL, ARG0 .. ARG3];
+
     my($kernel, $kicker, $chan, $who, $msg) = @_[KERNEL, ARG0 .. ARG3];
 
     $who =~ s/^(.*)!.*$/$1/;
@@ -412,17 +406,14 @@ sub mainloop {
 sub dispatch {
     my($action, @param) = @_;
 
-    no strict 'refs';
-    # FIXME scempio. no strict 'refs' serve per permettere quel check su priority
-    #       nel sort che segue. // per evitare i warning fra check undefined.
-    foreach my $botlet (sort { (${$a."::priority"} // 100) <=> (${$b."::priority"} // 100) } @Boha::botlet) {
-        my $event = $botlet."::$action";
+    foreach my $botlet (sort { ${$a."::priority"} <=> ${$b."::priority"} } @Boha::botlet) {
+        $event = $botlet."::$action";
         # warn "dispatching to $botlet\n";
-        if ($botlet->can($action)) {
-          # FIXME (sub ref)
-          my $sub = \&{$event};
-          $sub->($boha, @param);
-          last;
+        if( defined &{$event} ) {
+            #if($action ne "onTimer") {
+            #    print "dispatch -> $event\n";
+            #}
+            last if &{$event}($boha, @param);
         }
     }
 }
