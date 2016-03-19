@@ -3,6 +3,7 @@ package Boha;
 
 use POE;
 use POE::Component::IRC;
+use YAML qw/ LoadFile /;
 
 use vars qw/ $VERSION @botlet /;
 
@@ -37,16 +38,22 @@ sub init {
 }
 
 sub new {
-    my($class, $poe_kernel) = @_;
-    return bless {
-        kernel => $poe_kernel,
-        host => undef,
-        port => 6667,
-        nick => undef,
-        auth => { },
-        todo => [ ],
-        authq => [ ],
-    };
+	my($class, $poe_kernel, $cfg_file) = @_;
+
+	my $conf = LoadFile($cfg_file);
+
+	return bless {
+		kernel => $poe_kernel,
+		host => $conf->{host}, # SCALAR
+		port => 6667,
+		nick => $conf->{nick}, # SCALAR
+        quit => $conf->{quit}, # SCALAR
+        chan => $conf->{chan}, # ARRAY ref
+		auth => { },
+		todo => [ ],
+		authq => [ ],
+		conf => $conf,
+	};
 }
 
 sub go {
