@@ -1,0 +1,5 @@
+host: irc.freenode.net
+nick: boha
+quit: Dave... ho paura
+chan: [ '#perl.it', '#perl-it' ]
+delay_after: 3600

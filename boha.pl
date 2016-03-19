@@ -21,25 +21,16 @@ use POE::Component::IRC;
 #sub POE::Component::Server::SOAP::DEBUG () { 1 };
 #use POE::Component::Server::SOAP;
 
-use vars qw(
-    $boha
-    $VERSION
-);
+our $VERSION = '$Id: boha.pl,v 1.30 2004/06/15 12:45:51 dada Exp $';
 
-$VERSION = '$Id: boha.pl,v 1.30 2004/06/15 12:45:51 dada Exp $';
+my $cfg_file = shift @ARGV || 'config.yaml';
+die "cannot read the config file '$cfg_file'\n" unless -r $cfg_file;
 
 #### creiamo il nostro oggettone
-$boha = Boha->new( $poe_kernel );
+my $boha = Boha->new( $poe_kernel, $cfg_file );
 
 #### carichiamo i botlet e popoliamo il pool
 print STDERR map { "loaded botlet $_\n" } $boha->init();
-
-#### impostiamo qualche parametro
-#### (poi sarà preso da file di conf.)
-$boha->{host} = 'irc.freenode.net'; # 'irc.slashdot.org';
-$boha->{nick} = 'boha';
-$boha->{quit} = 'Dave... ho paura';
-$boha->{chan} = [ '#perl.it', '#perl-it' ]; # [ '#nordest.pm' ];
 
 #### creiamo gli oggetti POE che ci servono
 POE::Component::IRC->spawn(alias => 'boha')
